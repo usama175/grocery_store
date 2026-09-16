@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id       Int       @id @default(autoincrement())
+  name     String
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id            Int         @id @default(autoincrement())
+  barcode       String?     @unique
+  name          String
+  categoryId    Int?        @map("category_id")
+  category      Category?   @relation(fields: [categoryId], references: [id])
+  unit          String      @default("pcs")
+  purchaseRate  Decimal     @map("purchase_rate")
+  saleRate      Decimal     @map("sale_rate")
+  currentStock  Decimal     @default(0) @map("current_stock")
+  minStockAlert Decimal     @default(5) @map("min_stock_alert")
+  isActive      Boolean     @default(true) @map("is_active")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  saleItems     SaleItem[]
+  stockTakes    StockTake[]
+
+  @@map("products")
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  name      String
+  phone     String?  @unique
+  address   String?
+  balance   Decimal  @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  sales     Sale[]
+
+  @@map("customers")
+}
+
+model Sale {
+  id             Int                  @id @default(autoincrement())
+  invoiceNumber  String               @unique @map("invoice_number")
+  customerId     Int?                 @map("customer_id")
+  customer       Customer?            @relation(fields: [customerId], references: [id])
+  totalAmount    Decimal              @map("total_amount")
+  discountAmount Decimal              @default(0) @map("discount_amount")
+  netAmount      Decimal              @map("net_amount")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  items          SaleItem[]
+  payments       SalePayment[]
+  accountTxns    AccountTransaction[]
+
+  @@map("sales")
+}
+
+model SaleItem {
+  id           Int     @id @default(autoincrement())
+  saleId       Int     @map("sale_id")
+  sale         Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId    Int     @map("product_id")
+  product      Product @relation(fields: [productId], references: [id])
+  quantity     Decimal
+  purchaseRate Decimal @map("purchase_rate")
+  saleRate     Decimal @map("sale_rate")
+  total        Decimal
+
+  @@map("sale_items")
+}
+
+model SalePayment {
+  id          Int      @id @default(autoincrement())
+  saleId      Int      @map("sale_id")
+  sale        Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  method      String
+  amount      Decimal
+  referenceId String?  @map("reference_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("sale_payments")
+}
+
+model StockTake {
+  id            Int      @id @default(autoincrement())
+  productId     Int      @map("product_id")
+  product       Product  @relation(fields: [productId], references: [id])
+  expectedStock Decimal  @map("expected_stock")
+  countedStock  Decimal  @map("counted_stock")
+  difference    Decimal
+  reason        String?
+  performedAt   DateTime @default(now()) @map("performed_at")
+
+  @@map("stock_takes")
+}
+
+model Expense {
+  id            Int                  @id @default(autoincrement())
+  title         String
+  category      String
+  amount        Decimal
+  paymentMethod String               @map("payment_method")
+  notes         String?
+  date          DateTime             @default(now())
+  createdAt     DateTime             @default(now()) @map("created_at")
+  accountTxns   AccountTransaction[]
+
+  @@map("expenses")
+}
+
+model AccountTransaction {
+  id                 Int      @id @default(autoincrement())
+  accountType        String   @map("account_type")
+  transactionType    String   @map("transaction_type")
+  amount             Decimal
+  description        String?
+  referenceSaleId    Int?     @map("reference_sale_id")
+  referenceSale      Sale?    @relation(fields: [referenceSaleId], references: [id])
+  referenceExpenseId Int?     @map("reference_expense_id")
+  referenceExpense   Expense? @relation(fields: [referenceExpenseId], references: [id])
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@map("account_transactions")
+}
