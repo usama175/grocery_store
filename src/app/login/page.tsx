@@ -1,7 +1,12 @@
+"use client";
+
 import { Store } from "lucide-react";
-import Link from "next/link";
+import { useActionState } from "react";
+import { login } from "@/app/actions/auth";
 
 export default function LoginPage() {
+  const [state, formAction, isPending] = useActionState(login, undefined);
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
@@ -20,7 +25,7 @@ export default function LoginPage() {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-4 shadow-sm border border-gray-200 sm:rounded-xl sm:px-10">
-          <form className="space-y-6" action="#">
+          <form className="space-y-6" action={formAction}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
@@ -53,6 +58,12 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {state?.error && (
+              <div className="text-sm text-rose-600 font-medium">
+                {state.error}
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
@@ -74,12 +85,13 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <Link
-                href="/"
-                className="flex w-full justify-center rounded-lg border border-transparent bg-emerald-600 py-2.5 px-4 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all"
+              <button
+                type="submit"
+                disabled={isPending}
+                className="flex w-full justify-center rounded-lg border border-transparent bg-emerald-600 py-2.5 px-4 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 transition-all disabled:opacity-50"
               >
-                Sign in
-              </Link>
+                {isPending ? "Signing in..." : "Sign in"}
+              </button>
             </div>
           </form>
         </div>

@@ -17,8 +17,10 @@ import {
   X,
   ChevronRight,
   User,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { logout } from "@/app/actions/auth";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -109,14 +111,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Sidebar Footer */}
         {sidebarOpen && (
           <div className="p-4 border-t border-gray-100">
-             <div className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
-               <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                  <User className="w-4 h-4 text-gray-600" />
+             <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors">
+               <div className="flex items-center gap-3 min-w-0">
+                 <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4 text-gray-600" />
+                 </div>
+                 <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">Admin</p>
+                    <p className="text-xs text-gray-500 truncate">Admin Session</p>
+                 </div>
                </div>
-               <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">Admin User</p>
-                  <p className="text-xs text-gray-500 truncate">admin@store.com</p>
-               </div>
+               <form action={logout}>
+                 <button type="submit" className="p-2 text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" title="Sign out">
+                   <LogOut className="w-4 h-4" />
+                 </button>
+               </form>
              </div>
           </div>
         )}
