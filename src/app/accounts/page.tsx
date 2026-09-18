@@ -1,4 +1,4 @@
-import { getLedgerSummary } from "@/app/actions/accounts";
+import { getLedgerSummary } from "@/lib/services/accounts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TransferModal } from "@/components/accounts/transfer-modal";
 import { formatCurrency, decimalToNumber } from "@/lib/utils";

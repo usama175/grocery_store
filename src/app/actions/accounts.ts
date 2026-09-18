@@ -12,14 +12,7 @@ const transferSchema = z.object({
   description: z.string().optional().nullable(),
 });
 
-export async function getLedgerSummary() {
-  const balances = await getAccountBalances();
-  const recent = await prisma.accountTransaction.findMany({
-    orderBy: { createdAt: "desc" },
-    take: 60,
-  });
-  return { balances: Object.fromEntries(balances), recent };
-}
+
 
 export async function internalTransfer(data: {
   fromAccount: string;

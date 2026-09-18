@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getDayEndReport, getLowStockProducts } from "@/lib/services/reports";
-import { getLedgerSummary } from "@/app/actions/accounts";
+import { getLedgerSummary } from "@/lib/services/accounts";
 import { formatCurrency, decimalToNumber } from "@/lib/utils";
 import {
   Package,
