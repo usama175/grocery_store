@@ -2,7 +2,10 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
 const secretKey = process.env.SESSION_SECRET;
-const encodedKey = new TextEncoder().encode(secretKey);
+if (!secretKey) {
+  console.warn("SESSION_SECRET environment variable is not set. Authentication will fail.");
+}
+const encodedKey = new TextEncoder().encode(secretKey || "fallback_secret_for_development_only");
 
 type SessionPayload = {
   email: string;
@@ -24,7 +27,7 @@ export async function decrypt(session: string | undefined = "") {
       algorithms: ["HS256"],
     });
     return payload as SessionPayload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
