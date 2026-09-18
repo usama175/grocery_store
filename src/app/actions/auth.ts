@@ -2,15 +2,17 @@
 
 import { createSession, deleteSession } from "@/lib/session";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/db";
 
-export async function login(prevState: any, formData: FormData) {
+export async function login(prevState: unknown, formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
 
-  const validEmail = process.env.ADMIN_EMAIL;
-  const validPassword = process.env.ADMIN_PASSWORD;
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
 
-  if (email !== validEmail || password !== validPassword) {
+  if (!user || user.password !== password) {
     return { error: "Invalid credentials" };
   }
 

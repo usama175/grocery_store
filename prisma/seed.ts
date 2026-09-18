@@ -264,6 +264,30 @@ async function main() {
     });
   }
 
+  console.log("Seeding admin user...");
+  const adminEmail = process.env.ADMIN_EMAIL;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (adminEmail && adminPassword) {
+    const existingAdmin = await (prisma as any).user.findUnique({
+      where: { email: adminEmail },
+    });
+    if (!existingAdmin) {
+      await (prisma as any).user.create({
+        data: {
+          email: adminEmail,
+          password: adminPassword,
+          name: "Admin User",
+        },
+      });
+      console.log(`Admin user seeded: ${adminEmail}`);
+    } else {
+      console.log(`Admin user already exists: ${adminEmail}`);
+    }
+  } else {
+    console.log("Skipped seeding admin user: ADMIN_EMAIL or ADMIN_PASSWORD not set in .env");
+  }
+
   console.log("Seed completed successfully!");
 }
 
