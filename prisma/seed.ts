@@ -270,19 +270,28 @@ async function main() {
 
   if (adminEmail && adminPassword) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (prisma as any).user.upsert({
-      where: { email: adminEmail },
-      update: {
-        password: adminPassword,
-        name: "Admin User",
-      },
-      create: {
-        email: adminEmail,
-        password: adminPassword,
-        name: "Admin User",
-      },
-    });
-    console.log(`Admin user seeded/updated: ${adminEmail}`);
+    const prismaUser = (prisma as any).user;
+    const firstUser = await prismaUser.findFirst();
+    if (firstUser) {
+      await prismaUser.update({
+        where: { id: firstUser.id },
+        data: {
+          email: adminEmail,
+          password: adminPassword,
+          name: "Admin User",
+        },
+      });
+      console.log(`Admin user updated to: ${adminEmail}`);
+    } else {
+      await prismaUser.create({
+        data: {
+          email: adminEmail,
+          password: adminPassword,
+          name: "Admin User",
+        },
+      });
+      console.log(`Admin user created: ${adminEmail}`);
+    }
   } else {
     console.log("Skipped seeding admin user: ADMIN_EMAIL or ADMIN_PASSWORD not set in .env");
   }

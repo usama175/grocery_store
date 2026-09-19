@@ -18,15 +18,25 @@ import {
   ChevronRight,
   User,
   LogOut,
+  ShoppingCart,
+  Users,
+  Receipt,
+  Wallet,
+  ClipboardList
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logout } from "@/app/actions/auth";
 
 const nav = [
   { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/pos", label: "POS", icon: ShoppingCart },
   { href: "/inventory", label: "Inventory", icon: Package },
+  { href: "/stock", label: "Stock Audits", icon: ClipboardList },
   { href: "/categories", label: "Categories", icon: Tags },
+  { href: "/customers", label: "Customers", icon: Users },
   { href: "/suppliers", label: "Suppliers", icon: Truck },
+  { href: "/expenses", label: "Expenses", icon: Receipt },
+  { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/alerts", label: "Stock Alerts", icon: AlertTriangle },
   { href: "/reports", label: "Reports", icon: BarChart2 },
   { href: "/settings", label: "Settings", icon: Settings },
