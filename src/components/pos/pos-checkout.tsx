@@ -6,11 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThermalReceiptModal, type ReceiptData } from "./thermal-receipt-modal";
-import {
-  PAYMENT_METHODS,
-  QUICK_CASH_DENOMINATIONS,
-  type PaymentMethod,
-} from "@/lib/constants";
+import { QUICK_CASH_DENOMINATIONS, PAYMENT_METHODS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/utils";
 import {
   ShoppingCart,
@@ -54,7 +50,7 @@ type CartLine = {
 };
 
 type PaymentLine = {
-  method: PaymentMethod;
+  method: string;
   amount: number;
   referenceId?: string;
 };
@@ -771,24 +767,27 @@ export function PosCheckout({
                     className="rounded-xl bg-slate-50 dark:bg-zinc-800/40 p-2.5 border border-slate-200 dark:border-zinc-700/80 space-y-2"
                   >
                     <div className="grid grid-cols-[130px_1fr] gap-2">
-                      <select
+                      <Input
+                        list="pos-payment-methods"
+                        placeholder="e.g. cash"
                         className="h-9 rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2 text-xs font-semibold capitalize"
                         value={p.method}
                         onChange={(e) => {
-                          const method = e.target.value as PaymentMethod;
+                          const method = e.target.value;
                           setPayments((prev) =>
                             prev.map((row, i) =>
                               i === idx ? { ...row, method } : row
                             )
                           );
                         }}
-                      >
+                      />
+                      <datalist id="pos-payment-methods">
                         {PAYMENT_METHODS.map((m) => (
                           <option key={m.value} value={m.value}>
                             {m.label}
                           </option>
                         ))}
-                      </select>
+                      </datalist>
 
                       <Input
                         type="number"

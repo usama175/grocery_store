@@ -104,17 +104,21 @@ export function ExpenseForm() {
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 mb-1">
                 Category *
               </label>
-              <select
+              <Input
+                required
+                list="expense-categories"
+                placeholder="e.g. utilities, custom"
                 className="h-10 w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 text-xs font-semibold"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-              >
+              />
+              <datalist id="expense-categories">
                 {EXPENSE_CATEGORIES.map((c) => (
                   <option key={c.value} value={c.value}>
                     {c.label}
                   </option>
                 ))}
-              </select>
+              </datalist>
             </div>
 
             <div>
@@ -138,17 +142,21 @@ export function ExpenseForm() {
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 mb-1">
                 Paid From Channel *
               </label>
-              <select
+              <Input
+                required
+                list="expense-payment-methods"
+                placeholder="e.g. cash, custom"
                 className="h-10 w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 text-xs font-semibold capitalize"
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value)}
-              >
+              />
+              <datalist id="expense-payment-methods">
                 {EXPENSE_PAYMENT_METHODS.map((m) => (
                   <option key={m.value} value={m.value}>
                     {m.label}
                   </option>
                 ))}
-              </select>
+              </datalist>
             </div>
 
             <div>

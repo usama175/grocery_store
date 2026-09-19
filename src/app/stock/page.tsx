@@ -2,8 +2,9 @@ import { getProducts } from "@/app/actions/products";
 import { getRecentStockTakes } from "@/app/actions/stock";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StockAuditForm } from "@/components/stock/stock-audit-form";
+import { EditStockModal } from "@/components/stock/edit-stock-modal";
 import { decimalToNumber } from "@/lib/utils";
-import { ClipboardList, AlertCircle, History } from "lucide-react";
+import { ClipboardList, History } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -99,6 +100,7 @@ export default async function StockPage() {
                   <th className="py-3 px-2 text-right">Counted</th>
                   <th className="py-3 px-2 text-right">Variance</th>
                   <th className="py-3 px-4">Reason / Notes</th>
+                  <th className="py-3 px-2 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
@@ -149,6 +151,10 @@ export default async function StockPage() {
                         <span className="inline-block max-w-[220px] truncate" title={t.reason || ""}>
                           {t.reason || "Audit reconciliation"}
                         </span>
+                      </td>
+
+                      <td className="py-3 px-2 text-right">
+                        <EditStockModal stockTake={t} />
                       </td>
                     </tr>
                   );

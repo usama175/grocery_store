@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CustomerModal } from "@/components/customers/customer-modal";
+import { EditCustomerModal } from "@/components/customers/edit-customer-modal";
 import { ReceivePaymentModal } from "@/components/customers/receive-payment-modal";
 import { formatCurrency, decimalToNumber } from "@/lib/utils";
 import { Users, Search, BookOpen, AlertCircle, ArrowUpRight } from "lucide-react";
@@ -211,6 +212,8 @@ export default async function CustomersPage({
                         >
                           View History
                         </Link>
+                        
+                        <EditCustomerModal customer={c} />
                       </div>
                     </td>
                   </tr>

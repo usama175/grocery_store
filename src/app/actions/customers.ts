@@ -59,6 +59,44 @@ export async function createCustomer(data: {
   return { ok: true as const, customer };
 }
 
+export async function updateCustomer(id: number, data: {
+  name: string;
+  phone?: string | null;
+  address?: string | null;
+  balance?: number;
+}) {
+  const parsed = customerSchema.safeParse(data);
+  if (!parsed.success) {
+    return { ok: false as const, error: parsed.error.issues[0]?.message || "Invalid customer data" };
+  }
+
+  const { name, phone, address } = parsed.data;
+
+  if (phone?.trim()) {
+    const dup = await prisma.customer.findFirst({
+      where: { phone: phone.trim(), id: { not: id } },
+    });
+    if (dup) {
+      return { ok: false as const, error: `Customer with phone ${phone} already exists (${dup.name})` };
+    }
+  }
+
+  const customer = await prisma.customer.update({
+    where: { id },
+    data: {
+      name: name.trim(),
+      phone: phone?.trim() || null,
+      address: address?.trim() || null,
+      ...(data.balance !== undefined ? { balance: data.balance } : {}),
+    },
+  });
+
+  revalidatePath("/customers");
+  revalidatePath("/customers/[id]", "page");
+  revalidatePath("/pos");
+  return { ok: true as const, customer };
+}
+
 export async function receivePayment({
   customerId,
   amount,

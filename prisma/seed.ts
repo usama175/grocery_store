@@ -269,21 +269,20 @@ async function main() {
   const adminPassword = process.env.ADMIN_PASSWORD;
 
   if (adminEmail && adminPassword) {
-    const existingAdmin = await (prisma as any).user.findUnique({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (prisma as any).user.upsert({
       where: { email: adminEmail },
+      update: {
+        password: adminPassword,
+        name: "Admin User",
+      },
+      create: {
+        email: adminEmail,
+        password: adminPassword,
+        name: "Admin User",
+      },
     });
-    if (!existingAdmin) {
-      await (prisma as any).user.create({
-        data: {
-          email: adminEmail,
-          password: adminPassword,
-          name: "Admin User",
-        },
-      });
-      console.log(`Admin user seeded: ${adminEmail}`);
-    } else {
-      console.log(`Admin user already exists: ${adminEmail}`);
-    }
+    console.log(`Admin user seeded/updated: ${adminEmail}`);
   } else {
     console.log("Skipped seeding admin user: ADMIN_EMAIL or ADMIN_PASSWORD not set in .env");
   }

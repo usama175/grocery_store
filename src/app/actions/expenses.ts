@@ -62,3 +62,38 @@ export async function createExpense(data: {
   revalidatePath("/");
   return { ok: true as const, expense };
 }
+
+export async function updateExpense(id: number, data: {
+  title: string;
+  category: string;
+  amount: number;
+  paymentMethod: string;
+  notes?: string | null;
+  date?: string | null;
+}) {
+  const parsed = expenseSchema.safeParse(data);
+  if (!parsed.success) {
+    return { ok: false as const, error: parsed.error.issues[0]?.message || "Invalid expense data" };
+  }
+  const d = parsed.data;
+
+  const expenseDate = d.date ? new Date(d.date) : new Date();
+
+  const expense = await prisma.expense.update({
+    where: { id },
+    data: {
+      title: d.title.trim(),
+      category: d.category,
+      amount: d.amount,
+      paymentMethod: d.paymentMethod,
+      notes: d.notes?.trim() || null,
+      date: expenseDate,
+    },
+  });
+
+  revalidatePath("/expenses");
+  revalidatePath("/reports");
+  revalidatePath("/accounts");
+  revalidatePath("/");
+  return { ok: true as const, expense };
+}

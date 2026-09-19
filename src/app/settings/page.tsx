@@ -1,6 +1,23 @@
+"use client";
+
+import { useState } from "react";
 import { User, Bell, Shield, Store } from "lucide-react";
 
 export default function SettingsPage() {
+  const [activeTab, setActiveTab] = useState("store");
+  
+  const [storeDetails, setStoreDetails] = useState({
+    name: "GrocerAdmin Supermart",
+    email: "admin@store.com",
+    currency: "PKR (Rs)",
+    timezone: "Asia/Karachi (PKT)"
+  });
+
+  const handleSave = () => {
+    // Basic mock save feedback
+    alert("Settings saved successfully!");
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -14,66 +31,128 @@ export default function SettingsPage() {
         {/* Settings Sidebar */}
         <div className="w-full lg:w-64 flex-shrink-0">
           <nav className="space-y-1">
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-50 text-emerald-700 font-medium text-sm transition-colors">
+            <button
+              onClick={() => setActiveTab("store")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                activeTab === "store"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
               <Store className="w-4 h-4" /> Store Details
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium text-sm transition-colors">
+            </button>
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                activeTab === "profile"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
               <User className="w-4 h-4" /> Profile
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium text-sm transition-colors">
+            </button>
+            <button
+              onClick={() => setActiveTab("notifications")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                activeTab === "notifications"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
               <Bell className="w-4 h-4" /> Notifications
-            </a>
-            <a href="#" className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium text-sm transition-colors">
+            </button>
+            <button
+              onClick={() => setActiveTab("security")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium text-sm transition-colors ${
+                activeTab === "security"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+              }`}
+            >
               <Shield className="w-4 h-4" /> Security
-            </a>
+            </button>
           </nav>
         </div>
 
         {/* Settings Content */}
         <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-lg font-semibold text-gray-900">Store Details</h2>
-            <p className="text-sm text-gray-500 mt-1">Update your basic store information and preferences.</p>
-          </div>
-          <div className="p-6 space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Store Name</label>
-                <input
-                  type="text"
-                  defaultValue="GrocerAdmin Supermart"
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                />
+          {activeTab === "store" && (
+            <>
+              <div className="p-6 border-b border-gray-100">
+                <h2 className="text-lg font-semibold text-gray-900">Store Details</h2>
+                <p className="text-sm text-gray-500 mt-1">Update your basic store information and preferences.</p>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
-                <input
-                  type="email"
-                  defaultValue="admin@store.com"
-                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
-                <select className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
-                  <option>PKR (Rs)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
-                <select className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all">
-                  <option>Asia/Karachi (PKT)</option>
-                  <option>America/New_York (EST)</option>
-                </select>
-              </div>
-            </div>
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Store Name</label>
+                    <input
+                      type="text"
+                      value={storeDetails.name}
+                      onChange={(e) => setStoreDetails({ ...storeDetails, name: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Email</label>
+                    <input
+                      type="email"
+                      value={storeDetails.email}
+                      onChange={(e) => setStoreDetails({ ...storeDetails, email: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                    <select 
+                      value={storeDetails.currency}
+                      onChange={(e) => setStoreDetails({ ...storeDetails, currency: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    >
+                      <option value="PKR (Rs)">PKR (Rs)</option>
+                      <option value="USD ($)">USD ($)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Timezone</label>
+                    <select 
+                      value={storeDetails.timezone}
+                      onChange={(e) => setStoreDetails({ ...storeDetails, timezone: e.target.value })}
+                      className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    >
+                      <option value="Asia/Karachi (PKT)">Asia/Karachi (PKT)</option>
+                      <option value="America/New_York (EST)">America/New_York (EST)</option>
+                    </select>
+                  </div>
+                </div>
 
-            <div className="pt-6 border-t border-gray-100 flex justify-end">
-              <button className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-5 py-2 rounded-lg transition-colors">
-                Save Changes
-              </button>
+                <div className="pt-6 border-t border-gray-100 flex justify-end">
+                  <button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm px-5 py-2 rounded-lg transition-colors">
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === "profile" && (
+            <div className="p-6">
+              <h2 className="text-lg font-semibold text-gray-900">Profile</h2>
+              <p className="text-sm text-gray-500 mt-1">Profile settings coming soon.</p>
             </div>
-          </div>
+          )}
+          {activeTab === "notifications" && (
+            <div className="p-6">
+              <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
+              <p className="text-sm text-gray-500 mt-1">Notification preferences coming soon.</p>
+            </div>
+          )}
+          {activeTab === "security" && (
+            <div className="p-6">
+              <h2 className="text-lg font-semibold text-gray-900">Security</h2>
+              <p className="text-sm text-gray-500 mt-1">Security settings coming soon.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

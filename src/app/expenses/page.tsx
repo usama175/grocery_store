@@ -1,6 +1,7 @@
 import { getExpenses } from "@/app/actions/expenses";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExpenseForm } from "@/components/expenses/expense-form";
+import { EditExpenseModal } from "@/components/expenses/edit-expense-modal";
 import { formatCurrency, decimalToNumber } from "@/lib/utils";
 import { Receipt, Calendar, CreditCard } from "lucide-react";
 
@@ -47,7 +48,7 @@ export default async function ExpensesPage() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-semibold uppercase text-slate-500">
-                Today's Overhead
+                Today&apos;s Overhead
               </span>
               <Calendar className="h-4 w-4 text-amber-500" />
             </div>
@@ -113,6 +114,7 @@ export default async function ExpensesPage() {
                   <th className="py-3 px-3">Category</th>
                   <th className="py-3 px-3">Paid From</th>
                   <th className="py-3 px-4 text-right">Amount</th>
+                  <th className="py-3 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
@@ -152,6 +154,10 @@ export default async function ExpensesPage() {
 
                     <td className="py-3 px-4 text-right font-black text-slate-900 dark:text-white text-sm">
                       {formatCurrency(decimalToNumber(e.amount))}
+                    </td>
+
+                    <td className="py-3 px-3 text-right">
+                      <EditExpenseModal expense={e} />
                     </td>
                   </tr>
                 ))}
