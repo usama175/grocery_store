@@ -151,3 +151,13 @@ model User {
 
   @@map("users")
 }
+
+model StoreSettings {
+  id       Int    @id @default(1)
+  name     String @default("GrocerAdmin Supermart")
+  email    String @default("admin@store.com")
+  currency String @default("PKR (Rs)")
+  timezone String @default("Asia/Karachi (PKT)")
+
+  @@map("store_settings")
+}

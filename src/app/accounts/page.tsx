@@ -1,6 +1,5 @@
 import { getLedgerSummary } from "@/lib/services/accounts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { TransferModal } from "@/components/accounts/transfer-modal";
 import { formatCurrency, decimalToNumber } from "@/lib/utils";
 import {
   Wallet,
@@ -68,7 +67,7 @@ export default async function AccountsPage() {
             </span>
           </div>
           <p className="text-sm text-slate-500 dark:text-zinc-400">
-            Real-time balance ledger for Cash, JazzCash, Easypaisa, Bank, and internal transfers
+            Real-time balance ledger for Cash, JazzCash, Easypaisa, and Bank
           </p>
         </div>
 
@@ -81,7 +80,6 @@ export default async function AccountsPage() {
               {formatCurrency(totalLiquid)}
             </span>
           </div>
-          <TransferModal balances={balances} />
         </div>
       </div>
 

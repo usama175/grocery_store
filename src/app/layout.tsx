@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/layout/app-shell";
 import { MondayReminder } from "@/components/layout/monday-reminder";
+import { getStoreSettings } from "@/app/actions/settings";
 
 export const dynamic = "force-dynamic";
 
@@ -21,18 +22,20 @@ export const metadata: Metadata = {
   description: "Inventory, billing, khata, and day-end reporting for grocery retail",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const settings = await getStoreSettings();
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <AppShell>{children}</AppShell>
+        <AppShell storeName={settings.name}>{children}</AppShell>
         <MondayReminder />
       </body>
     </html>

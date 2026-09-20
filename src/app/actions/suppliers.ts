@@ -13,7 +13,7 @@ const supplierSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-export async function saveSupplier(prevState: any, formData: FormData) {
+export async function saveSupplier(prevState: unknown, formData: FormData) {
   const data = {
     id: formData.get("id") ? Number(formData.get("id")) : undefined,
     name: formData.get("name") as string,

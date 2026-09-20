@@ -6,19 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThermalReceiptModal, type ReceiptData } from "./thermal-receipt-modal";
-import { QUICK_CASH_DENOMINATIONS, PAYMENT_METHODS } from "@/lib/constants";
 import { formatCurrency } from "@/lib/utils";
 import {
   ShoppingCart,
   Trash2,
   Plus,
   Minus,
-  Barcode,
   Printer,
-  Volume2,
-  VolumeX,
-  CreditCard,
   User,
+  Banknote,
+  Smartphone,
+  WalletCards,
+  Landmark,
+  FileClock
 } from "lucide-react";
 
 export type PosProduct = {
@@ -70,54 +70,15 @@ export function PosCheckout({
   const [cart, setCart] = useState<CartLine[]>([]);
   const [customerId, setCustomerId] = useState<number | "">("");
   const [discount, setDiscount] = useState(0);
-  const [payments, setPayments] = useState<PaymentLine[]>([
-    { method: "cash", amount: 0 },
-  ]);
-  const [cashTendered, setCashTendered] = useState<number | "">("");
+  
+  // Single payment line for the quick payment UI
+  const [paymentMethod, setPaymentMethod] = useState<string>("cash");
+  
   const [status, setStatus] = useState<{ message: string; type: "error" | "success" } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(true);
 
   // Completed receipt for thermal printing modal
   const [currentReceipt, setCurrentReceipt] = useState<ReceiptData | null>(null);
-
-  // Web Audio sound effects
-  const playBeep = useCallback((type: "scan" | "success" | "alert") => {
-    if (!soundEnabled) return;
-    try {
-      const AudioCtx = window.AudioContext || (window as Window & typeof globalThis & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      if (type === "scan") {
-        osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.08);
-      } else if (type === "success") {
-        osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.08); // A5
-        gain.gain.setValueAtTime(0.12, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.25);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.25);
-      } else if (type === "alert") {
-        osc.type = "sawtooth";
-        osc.frequency.setValueAtTime(320, ctx.currentTime);
-        gain.gain.setValueAtTime(0.1, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
-        osc.start(ctx.currentTime);
-        osc.stop(ctx.currentTime + 0.15);
-      }
-    } catch {
-      // AudioContext policy fallback
-    }
-  }, [soundEnabled]);
 
   const focusSearch = useCallback(() => {
     setTimeout(() => {
@@ -130,7 +91,6 @@ export function PosCheckout({
     focusSearch();
   }, [focusSearch]);
 
-  // Filter products by search or category
   const filteredProducts = useMemo(() => {
     let result = products;
     if (selectedCategory !== null) {
@@ -150,20 +110,9 @@ export function PosCheckout({
   const subtotal = cart.reduce((s, l) => s + l.saleRate * l.quantity, 0);
   const net = Math.max(0, subtotal - discount);
 
-  // Keep single cash payment in sync with net amount if untouched
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (payments.length === 1 && payments[0].method === "cash" && payments[0].amount !== net) {
-        setPayments([{ method: "cash", amount: net }]);
-      }
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [net, payments]);
-
   const addProduct = (p: PosProduct, qty = 1) => {
     const stock = parseFloat(p.currentStock);
     if (stock <= 0) {
-      playBeep("alert");
       setStatus({ message: `"${p.name}" is out of stock!`, type: "error" });
       return;
     }
@@ -173,19 +122,16 @@ export function PosCheckout({
       if (existing) {
         const newQty = existing.quantity + qty;
         if (newQty > stock) {
-          playBeep("alert");
           setStatus({
             message: `Cannot add more than ${stock} ${p.unit} in stock for ${p.name}`,
             type: "error",
           });
           return prev;
         }
-        playBeep("scan");
         return prev.map((l) =>
           l.productId === p.id ? { ...l, quantity: newQty } : l
         );
       }
-      playBeep("scan");
       return [
         ...prev,
         {
@@ -211,7 +157,6 @@ export function PosCheckout({
           if (l.productId !== productId) return l;
           const newQty = Math.max(0, l.quantity + delta);
           if (newQty > l.currentStock) {
-            playBeep("alert");
             setStatus({
               message: `Maximum stock for ${l.name} is ${l.currentStock} ${l.unit}`,
               type: "error",
@@ -231,7 +176,6 @@ export function PosCheckout({
   const onSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      // If exact barcode match exists
       const exactBarcode = products.find(
         (p) => p.barcode && p.barcode.toLowerCase() === query.trim().toLowerCase()
       );
@@ -239,24 +183,11 @@ export function PosCheckout({
         addProduct(exactBarcode);
         return;
       }
-      // Else add first match
       if (filteredProducts[0]) {
         addProduct(filteredProducts[0]);
       }
     }
   };
-
-  const setQuickCash = (amount: number) => {
-    setCashTendered(amount);
-    if (payments.length === 1 && payments[0].method === "cash") {
-      setPayments([{ method: "cash", amount: net }]);
-    }
-  };
-
-  const changeDue =
-    typeof cashTendered === "number" && payments.length === 1 && payments[0].method === "cash"
-      ? cashTendered - net
-      : null;
 
   const selectedCustomer = customers.find((c) => c.id === customerId);
 
@@ -266,19 +197,9 @@ export function PosCheckout({
       return;
     }
 
-    const hasUdhaar = payments.some((p) => p.method === "udhaar" && p.amount > 0);
-    if (hasUdhaar && !customerId) {
+    if (paymentMethod === "udhaar" && !customerId) {
       setStatus({
         message: "Please select a registered customer to record Udhaar / Credit sale.",
-        type: "error",
-      });
-      return;
-    }
-
-    const totalPaid = payments.reduce((s, p) => s + p.amount, 0);
-    if (Math.abs(totalPaid - net) > 0.01) {
-      setStatus({
-        message: `Payment split total (Rs ${totalPaid}) must equal Net Amount (Rs ${net}).`,
         type: "error",
       });
       return;
@@ -287,24 +208,25 @@ export function PosCheckout({
     setLoading(true);
     setStatus(null);
 
+    const paymentLine: PaymentLine = {
+      method: paymentMethod,
+      amount: net, // Send the full net amount automatically
+    };
+
     const result = await checkout({
       customerId: customerId === "" ? null : customerId,
       discountAmount: discount,
       items: cart.map((l) => ({ productId: l.productId, quantity: l.quantity })),
-      payments: payments.filter((p) => p.amount > 0),
+      payments: net > 0 ? [paymentLine] : [], // Only process payment if net > 0
     });
 
     setLoading(false);
 
     if (!result.ok) {
-      playBeep("alert");
       setStatus({ message: result.error, type: "error" });
       return;
     }
 
-    playBeep("success");
-
-    // Prepare receipt data
     const receiptData: ReceiptData = {
       invoiceNumber: result.sale.invoiceNumber,
       date: new Date(),
@@ -312,7 +234,7 @@ export function PosCheckout({
       customerPhone: selectedCustomer?.phone || undefined,
       customerKhataBalance: selectedCustomer
         ? parseFloat(selectedCustomer.balance) +
-          (payments.find((p) => p.method === "udhaar")?.amount || 0)
+          (paymentMethod === "udhaar" ? net : 0)
         : undefined,
       items: cart.map((l) => ({
         name: l.name,
@@ -324,18 +246,15 @@ export function PosCheckout({
       subtotal,
       discount,
       netAmount: net,
-      cashTendered: typeof cashTendered === "number" ? cashTendered : undefined,
-      changeDue: changeDue !== null ? changeDue : undefined,
-      payments: payments.filter((p) => p.amount > 0),
+      payments: net > 0 ? [paymentLine] : [],
     };
 
     setCurrentReceipt(receiptData);
 
-    // Reset Cart & State for Next Sale
+    // Reset Form
     setCart([]);
     setDiscount(0);
-    setPayments([{ method: "cash", amount: 0 }]);
-    setCashTendered("");
+    setPaymentMethod("cash");
     setCustomerId("");
     setStatus({
       message: `Sale complete — Invoice #${result.sale.invoiceNumber}`,
@@ -346,37 +265,20 @@ export function PosCheckout({
     cart,
     customerId,
     discount,
-    payments,
+    paymentMethod,
     net,
     subtotal,
-    cashTendered,
-    changeDue,
     selectedCustomer,
-    playBeep,
     focusSearch,
   ]);
 
-  // Global Keyboard Shortcuts (F9: Checkout, F2: Search, Esc: Clear)
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "F9") {
-        e.preventDefault();
-        void completeSale();
-      } else if (e.key === "F2" || (e.key === "/" && document.activeElement !== searchRef.current)) {
-        e.preventDefault();
-        focusSearch();
-      } else if (e.key === "Escape" && cart.length > 0 && !currentReceipt) {
-        if (confirm("Clear current cart?")) {
-          setCart([]);
-          setDiscount(0);
-          setPayments([{ method: "cash", amount: 0 }]);
-          setCashTendered("");
-        }
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [completeSale, focusSearch, cart.length, currentReceipt]);
+  const paymentOptions = [
+    { value: "cash", label: "Cash", icon: Banknote, color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-950 border-emerald-200" },
+    { value: "jazzcash", label: "JazzCash", icon: Smartphone, color: "text-rose-600 bg-rose-50 dark:bg-rose-950 border-rose-200" },
+    { value: "easypaisa", label: "EasyPaisa", icon: WalletCards, color: "text-green-600 bg-green-50 dark:bg-green-950 border-green-200" },
+    { value: "bank", label: "Bank", icon: Landmark, color: "text-blue-600 bg-blue-50 dark:bg-blue-950 border-blue-200" },
+    { value: "udhaar", label: "Udhaar", icon: FileClock, color: "text-amber-600 bg-amber-50 dark:bg-amber-950 border-amber-200" },
+  ];
 
   return (
     <div className="space-y-4">
@@ -390,25 +292,10 @@ export function PosCheckout({
             <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">
               POS Terminal
             </h1>
-            <p className="text-xs text-slate-400">
-              Hotkeys: <kbd className="px-1 py-0.5 bg-slate-100 dark:bg-zinc-800 rounded font-mono">[F2]</kbd> Search · <kbd className="px-1 py-0.5 bg-slate-100 dark:bg-zinc-800 rounded font-mono">[F9]</kbd> Checkout
-            </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Sound Toggle */}
-          <button
-            type="button"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800"
-            title="Toggle Scan Sound Feedback"
-          >
-            {soundEnabled ? <Volume2 className="h-3.5 w-3.5 text-emerald-600" /> : <VolumeX className="h-3.5 w-3.5 text-slate-400" />}
-            <span className="hidden sm:inline">{soundEnabled ? "Sound ON" : "Muted"}</span>
-          </button>
-
-          {/* Re-print last receipt button */}
           {currentReceipt && (
             <Button
               type="button"
@@ -423,19 +310,18 @@ export function PosCheckout({
         </div>
       </div>
 
-      {/* Main Grid: Left Catalog & Cart vs Right Payment Drawer */}
-      <div className="grid gap-4 lg:grid-cols-[1fr_390px] xl:grid-cols-[1fr_420px]">
-        {/* Left Column */}
-        <div className="space-y-4">
+      {/* Main Grid */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_450px] xl:grid-cols-[1fr_500px]">
+        {/* Left Column (Catalog + Cart) */}
+        <div className="space-y-4 flex flex-col min-h-[70vh]">
           {/* Barcode Search & Category Tabs */}
           <Card>
             <CardContent className="p-4 space-y-3">
               <div className="relative">
-                <Barcode className="absolute left-3.5 top-3 h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                 <Input
                   ref={searchRef}
-                  placeholder="Scan barcode or type item name... (Press Enter to add)"
-                  className="h-11 pl-11 pr-4 text-base font-medium shadow-inner rounded-xl border-slate-300 dark:border-zinc-700 focus-visible:ring-emerald-500"
+                  placeholder="Search item name... (Press Enter to add)"
+                  className="h-11 px-4 text-base font-medium shadow-inner rounded-xl border-slate-300 dark:border-zinc-700 focus-visible:ring-emerald-500"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={onSearchKeyDown}
@@ -443,7 +329,6 @@ export function PosCheckout({
                 />
               </div>
 
-              {/* Quick Category Buttons */}
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
                 <button
                   type="button"
@@ -472,9 +357,8 @@ export function PosCheckout({
                 ))}
               </div>
 
-              {/* Instant Search Results Dropdown/Grid */}
-              <div className="grid gap-2 max-h-56 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3 border border-slate-200 dark:border-zinc-800 rounded-xl p-2 bg-slate-50/50 dark:bg-zinc-900/50">
-                {filteredProducts.slice(0, 18).map((p) => {
+              <div className="grid gap-2 max-h-48 overflow-y-auto sm:grid-cols-2 lg:grid-cols-4 border border-slate-200 dark:border-zinc-800 rounded-xl p-2 bg-slate-50/50 dark:bg-zinc-900/50">
+                {filteredProducts.slice(0, 16).map((p) => {
                   const stock = parseFloat(p.currentStock);
                   const isOut = stock <= 0;
                   return (
@@ -494,7 +378,7 @@ export function PosCheckout({
                           {p.name}
                         </p>
                         <p className="text-[10px] text-slate-400">
-                          {p.category?.name || "General"} · {p.barcode || "No Barcode"}
+                          {p.barcode || "No Barcode"}
                         </p>
                       </div>
                       <div className="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 dark:border-zinc-800/80">
@@ -519,8 +403,8 @@ export function PosCheckout({
           </Card>
 
           {/* Cart Table */}
-          <Card>
-            <CardHeader className="py-3 px-4 border-b border-slate-100 dark:border-zinc-800 flex flex-row items-center justify-between">
+          <Card className="flex-1 flex flex-col overflow-hidden">
+            <CardHeader className="py-3 px-4 border-b border-slate-100 dark:border-zinc-800 flex flex-row items-center justify-between shrink-0">
               <CardTitle className="text-sm font-bold flex items-center gap-2">
                 <span>Active Bill</span>
                 <span className="rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-xs px-2 py-0.5 font-bold">
@@ -537,94 +421,93 @@ export function PosCheckout({
                 </button>
               )}
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-y-auto flex-1">
               {cart.length === 0 ? (
                 <div className="py-12 text-center text-slate-400">
                   <ShoppingCart className="h-10 w-10 mx-auto mb-2 opacity-30" />
                   <p className="font-medium text-sm">Cart is empty</p>
-                  <p className="text-xs">Scan a barcode or click products to ring up bill</p>
+                  <p className="text-xs">Search for a product or click products to ring up bill</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-zinc-800/60 text-slate-500 font-semibold uppercase tracking-wider border-b border-slate-100 dark:border-zinc-800">
-                      <tr>
-                        <th className="py-2.5 px-4">Item</th>
-                        <th className="py-2.5 px-2 text-right">Price</th>
-                        <th className="py-2.5 px-2 text-center">Qty</th>
-                        <th className="py-2.5 px-3 text-right">Total</th>
-                        <th className="py-2.5 px-3 text-right">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
-                      {cart.map((line) => (
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-zinc-800/60 text-slate-500 font-semibold uppercase tracking-wider border-b border-slate-100 dark:border-zinc-800 sticky top-0 z-10">
+                    <tr>
+                      <th className="py-2.5 px-4">Item</th>
+                      <th className="py-2.5 px-2 text-right">Price</th>
+                      <th className="py-2.5 px-2 text-center">Qty</th>
+                      <th className="py-2.5 px-3 text-right">Total</th>
+                      <th className="py-2.5 px-3 text-right"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                    {cart.map((line) => {
+                      return (
                         <tr
                           key={line.productId}
-                          className="hover:bg-slate-50/70 dark:hover:bg-zinc-800/40"
+                          className="hover:bg-slate-50/70 dark:hover:bg-zinc-800/40 transition-colors"
                         >
-                          <td className="py-2.5 px-4 font-semibold text-slate-900 dark:text-white">
-                            {line.name}
-                            <span className="block text-[10px] text-slate-400 font-normal">
-                              Unit: {line.unit}
-                            </span>
+                          <td className="py-3 px-4 font-semibold text-slate-900 dark:text-white">
+                            <div className="flex items-center gap-2">
+                              <div>
+                                {line.name}
+                                <span className="block text-[10px] text-slate-400 font-normal">
+                                  Unit: {line.unit}
+                                </span>
+                              </div>
+                            </div>
                           </td>
-                          <td className="py-2.5 px-2 text-right font-medium text-slate-600 dark:text-zinc-300">
+                          <td className="py-3 px-2 text-right font-medium text-slate-600 dark:text-zinc-300">
                             {formatCurrency(line.saleRate)}
                           </td>
-                          <td className="py-2.5 px-2">
+                          <td className="py-3 px-2">
                             <div className="flex items-center justify-center gap-1">
                               <button
                                 type="button"
-                                onClick={() => updateQuantity(line.productId, -1)}
-                                className="h-6 w-6 rounded bg-slate-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-slate-200"
+                                onClick={(e) => { e.stopPropagation(); updateQuantity(line.productId, -1); }}
+                                className="h-7 w-7 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-slate-200"
                               >
                                 <Minus className="h-3 w-3" />
                               </button>
-                              <span className="w-8 text-center font-bold text-slate-900 dark:text-white text-xs">
+                              <span className="w-10 text-center font-bold text-slate-900 dark:text-white text-sm">
                                 {line.quantity}
                               </span>
                               <button
                                 type="button"
-                                onClick={() => updateQuantity(line.productId, 1)}
-                                className="h-6 w-6 rounded bg-slate-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-slate-200"
+                                onClick={(e) => { e.stopPropagation(); updateQuantity(line.productId, 1); }}
+                                className="h-7 w-7 rounded-lg bg-slate-100 dark:bg-zinc-800 flex items-center justify-center hover:bg-slate-200"
                               >
                                 <Plus className="h-3 w-3" />
                               </button>
                             </div>
                           </td>
-                          <td className="py-2.5 px-3 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">
+                          <td className="py-3 px-3 text-right font-black text-emerald-600 dark:text-emerald-400 text-sm">
                             {formatCurrency(line.saleRate * line.quantity)}
                           </td>
-                          <td className="py-2.5 px-3 text-right">
+                          <td className="py-3 px-3 text-right">
                             <button
                               type="button"
-                              onClick={() => removeLine(line.productId)}
+                              onClick={(e) => { e.stopPropagation(); removeLine(line.productId); }}
                               className="text-slate-400 hover:text-red-600 p-1"
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              <Trash2 className="h-4 w-4" />
                             </button>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      );
+                    })}
+                  </tbody>
+                </table>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Right Column: Checkout Drawer & Payment Calculations */}
+        {/* Right Column: Keypad & Payment Drawer */}
         <div className="space-y-4">
           <Card className="border-t-4 border-t-emerald-600 shadow-md">
-            <CardHeader className="py-3 px-4 border-b border-slate-100 dark:border-zinc-800">
-              <CardTitle className="text-sm font-bold flex items-center justify-between">
-                <span>Payment & Checkout</span>
-                <CreditCard className="h-4 w-4 text-emerald-600" />
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3.5">
-              {/* Customer Selector & Khata Balance */}
+            <CardContent className="p-4 space-y-4">
+              
+              {/* Customer Selector */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 mb-1 flex items-center gap-1">
                   <User className="h-3.5 w-3.5 text-slate-400" /> Customer
@@ -632,9 +515,7 @@ export function PosCheckout({
                 <select
                   className="h-10 w-full rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 text-xs font-medium"
                   value={customerId}
-                  onChange={(e) =>
-                    setCustomerId(e.target.value ? Number(e.target.value) : "")
-                  }
+                  onChange={(e) => setCustomerId(e.target.value ? Number(e.target.value) : "")}
                 >
                   <option value="">Walk-in Guest (Cash / Immediate)</option>
                   {customers.map((c) => {
@@ -658,175 +539,64 @@ export function PosCheckout({
                 )}
               </div>
 
-              {/* Subtotal, Discount & Net Payable */}
-              <div className="rounded-xl bg-slate-900 text-white p-3.5 shadow-inner">
-                <div className="flex justify-between text-xs text-slate-400 pb-1">
+              {/* Totals Screen */}
+              <div className="rounded-xl bg-slate-900 text-white p-4 shadow-inner">
+                <div className="flex justify-between text-sm text-slate-400 pb-1.5">
                   <span>Subtotal</span>
                   <span className="font-medium text-slate-200">{formatCurrency(subtotal)}</span>
                 </div>
-                <div className="flex justify-between items-center text-xs text-slate-400 pb-1">
-                  <span>Discount (Rs)</span>
-                  <input
-                    type="number"
-                    min={0}
-                    value={discount || ""}
-                    onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                    placeholder="0"
-                    className="h-6 w-20 rounded bg-slate-800 px-2 text-right text-xs font-bold text-white border border-slate-700"
-                  />
+                <div className="flex justify-between text-sm text-slate-400 pb-2">
+                  <span>Discount</span>
+                  <span className="font-medium text-red-400">- {formatCurrency(discount)}</span>
                 </div>
-                <div className="mt-2 pt-2 border-t border-slate-800 flex justify-between items-baseline">
-                  <span className="text-xs uppercase font-bold text-emerald-400">
+                <div className="mt-1 pt-2 border-t border-slate-800 flex justify-between items-baseline">
+                  <span className="text-sm uppercase font-bold text-emerald-400">
                     Net Payable
                   </span>
-                  <span className="text-2xl font-black text-emerald-400">
+                  <span className="text-3xl font-black text-emerald-400">
                     {formatCurrency(net)}
                   </span>
                 </div>
               </div>
 
-              {/* Quick Cash Buttons */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                  Quick Cash Calculator
-                </span>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setQuickCash(net)}
-                    className="rounded-lg bg-slate-100 dark:bg-zinc-800 py-1 text-xs font-bold hover:bg-slate-200"
-                  >
-                    Exact Net
-                  </button>
-                  {QUICK_CASH_DENOMINATIONS.map((d) => (
-                    <button
-                      key={d}
-                      type="button"
-                      onClick={() => setQuickCash(d)}
-                      className="rounded-lg bg-slate-100 dark:bg-zinc-800 py-1 text-xs font-semibold hover:bg-slate-200"
-                    >
-                      Rs {d}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Cash Tendered & Live Change Due */}
-              <div className="rounded-xl bg-slate-50 dark:bg-zinc-800/60 p-3 border border-slate-200 dark:border-zinc-700">
-                <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1">
-                  Cash Received (Tendered)
+              {/* Discount Input */}
+              <div className="bg-slate-100 dark:bg-zinc-800/50 p-3 rounded-xl border border-slate-200 dark:border-zinc-700">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 mb-2">
+                  Discount Amount (Rs)
                 </label>
                 <Input
                   type="number"
-                  placeholder="e.g. 1000"
-                  className="h-9 font-bold text-slate-900 dark:text-white"
-                  value={cashTendered}
-                  onChange={(e) =>
-                    setCashTendered(
-                      e.target.value === "" ? "" : parseFloat(e.target.value)
-                    )
-                  }
+                  placeholder="0"
+                  value={discount || ""}
+                  onChange={(e) => setDiscount(e.target.value ? Number(e.target.value) : 0)}
+                  className="h-10 text-lg font-bold border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950"
+                  min="0"
                 />
-                {changeDue !== null && (
-                  <div
-                    className={`mt-2 flex items-center justify-between rounded-lg p-2 text-xs font-bold ${
-                      changeDue >= 0
-                        ? "bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
-                        : "bg-red-100 text-red-900 dark:bg-red-950 dark:text-red-300"
-                    }`}
-                  >
-                    <span>{changeDue >= 0 ? "Change to return:" : "Short amount:"}</span>
-                    <span className="text-sm">{formatCurrency(Math.abs(changeDue))}</span>
-                  </div>
-                )}
               </div>
 
-              {/* Split Payment Methods */}
-              <div className="space-y-2 border-t border-slate-100 dark:border-zinc-800 pt-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-zinc-300">
-                    Payment Method Split
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setPayments((prev) => [
-                        ...prev,
-                        { method: "jazzcash", amount: 0 },
-                      ])
-                    }
-                    className="text-[11px] font-bold text-emerald-600 hover:underline"
-                  >
-                    + Split Payment
-                  </button>
+              {/* Payment Method Selector */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-zinc-400 mb-2">
+                  Select Payment Method
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {paymentOptions.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setPaymentMethod(opt.value)}
+                      className={`flex flex-col items-center justify-center p-2 rounded-xl border-2 transition-all ${
+                        paymentMethod === opt.value
+                          ? opt.color + " ring-2 ring-emerald-500/50 ring-offset-1"
+                          : "bg-white dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 text-slate-500 dark:text-zinc-400 hover:border-slate-300"
+                      }`}
+                    >
+                      <opt.icon className="h-5 w-5 mb-1" />
+                      <span className="text-[10px] font-bold">{opt.label}</span>
+                    </button>
+                  ))}
                 </div>
-
-                {payments.map((p, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-xl bg-slate-50 dark:bg-zinc-800/40 p-2.5 border border-slate-200 dark:border-zinc-700/80 space-y-2"
-                  >
-                    <div className="grid grid-cols-[130px_1fr] gap-2">
-                      <Input
-                        list="pos-payment-methods"
-                        placeholder="e.g. cash"
-                        className="h-9 rounded-lg border border-slate-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2 text-xs font-semibold capitalize"
-                        value={p.method}
-                        onChange={(e) => {
-                          const method = e.target.value;
-                          setPayments((prev) =>
-                            prev.map((row, i) =>
-                              i === idx ? { ...row, method } : row
-                            )
-                          );
-                        }}
-                      />
-                      <datalist id="pos-payment-methods">
-                        {PAYMENT_METHODS.map((m) => (
-                          <option key={m.value} value={m.value}>
-                            {m.label}
-                          </option>
-                        ))}
-                      </datalist>
-
-                      <Input
-                        type="number"
-                        min={0}
-                        placeholder="Amount"
-                        className="h-9 font-bold text-xs"
-                        value={p.amount || ""}
-                        onChange={(e) => {
-                          const amount = parseFloat(e.target.value) || 0;
-                          setPayments((prev) =>
-                            prev.map((row, i) =>
-                              i === idx ? { ...row, amount } : row
-                            )
-                          );
-                        }}
-                      />
-                    </div>
-
-                    {/* Digital Wallet TID / Reference input */}
-                    {(p.method === "jazzcash" ||
-                      p.method === "easypaisa" ||
-                      p.method === "bank") && (
-                      <Input
-                        placeholder="Transaction ID / Last 4 digits (TID)"
-                        className="h-8 text-xs font-mono"
-                        value={p.referenceId ?? ""}
-                        onChange={(e) => {
-                          setPayments((prev) =>
-                            prev.map((row, i) =>
-                              i === idx
-                                ? { ...row, referenceId: e.target.value }
-                                : row
-                            )
-                          );
-                        }}
-                      />
-                    )}
-                  </div>
-                ))}
+                
               </div>
 
               {/* Status Message */}
@@ -845,11 +615,11 @@ export function PosCheckout({
               {/* Complete Checkout Button */}
               <Button
                 type="button"
-                className="w-full h-12 text-base font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
+                className="w-full h-14 text-lg font-black bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-lg shadow-emerald-600/20 active:scale-[0.98]"
                 disabled={loading || cart.length === 0}
                 onClick={completeSale}
               >
-                {loading ? "Processing..." : `Complete Sale — F9`}
+                {loading ? "Processing..." : `Complete Sale`}
               </Button>
             </CardContent>
           </Card>

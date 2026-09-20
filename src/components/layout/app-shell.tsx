@@ -27,22 +27,47 @@ import {
 import { cn } from "@/lib/utils";
 import { logout } from "@/app/actions/auth";
 
-const nav = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/pos", label: "POS", icon: ShoppingCart },
-  { href: "/inventory", label: "Inventory", icon: Package },
-  { href: "/stock", label: "Stock Audits", icon: ClipboardList },
-  { href: "/categories", label: "Categories", icon: Tags },
-  { href: "/customers", label: "Customers", icon: Users },
-  { href: "/suppliers", label: "Suppliers", icon: Truck },
-  { href: "/expenses", label: "Expenses", icon: Receipt },
-  { href: "/accounts", label: "Accounts", icon: Wallet },
-  { href: "/alerts", label: "Stock Alerts", icon: AlertTriangle },
-  { href: "/reports", label: "Reports", icon: BarChart2 },
-  { href: "/settings", label: "Settings", icon: Settings },
+const navGroups = [
+  {
+    title: "Core",
+    links: [
+      { href: "/", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/pos", label: "POS", icon: ShoppingCart },
+    ]
+  },
+  {
+    title: "Inventory & Stock",
+    links: [
+      { href: "/inventory", label: "Inventory", icon: Package },
+      { href: "/stock", label: "Stock Audits", icon: ClipboardList },
+      { href: "/categories", label: "Categories", icon: Tags },
+      { href: "/alerts", label: "Stock Alerts", icon: AlertTriangle },
+    ]
+  },
+  {
+    title: "People",
+    links: [
+      { href: "/customers", label: "Customers", icon: Users },
+      { href: "/suppliers", label: "Suppliers", icon: Truck },
+    ]
+  },
+  {
+    title: "Finance",
+    links: [
+      { href: "/expenses", label: "Expenses", icon: Receipt },
+      { href: "/accounts", label: "Accounts", icon: Wallet },
+    ]
+  },
+  {
+    title: "System",
+    links: [
+      { href: "/reports", label: "Reports", icon: BarChart2 },
+      { href: "/settings", label: "Settings", icon: Settings },
+    ]
+  }
 ];
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, storeName = "GrocerAdmin" }: { children: React.ReactNode, storeName?: string }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -78,7 +103,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded bg-emerald-50 text-emerald-600">
               <Package className="w-5 h-5" />
             </div>
-            {sidebarOpen && <span className="font-semibold text-sm tracking-tight whitespace-nowrap">GrocerAdmin</span>}
+            {sidebarOpen && <span className="font-semibold text-sm tracking-tight whitespace-nowrap truncate max-w-[150px]">{storeName}</span>}
           </div>
           <button 
             className="hidden md:flex text-gray-400 hover:text-gray-600"
@@ -95,27 +120,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-          {nav.map(({ href, label, icon: Icon }) => {
-            const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setMobileOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors outline-none",
-                  active 
-                    ? "bg-emerald-50 text-emerald-700" 
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                )}
-                title={!sidebarOpen ? label : undefined}
-              >
-                <Icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-emerald-600" : "text-gray-500")} />
-                {sidebarOpen && <span className="truncate">{label}</span>}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 py-4 px-3 space-y-6 overflow-y-auto custom-scrollbar">
+          {navGroups.map((group) => (
+            <div key={group.title} className="space-y-1">
+              {sidebarOpen && (
+                <div className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                  {group.title}
+                </div>
+              )}
+              {group.links.map(({ href, label, icon: Icon }) => {
+                const active = href === "/" ? pathname === "/" : pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setMobileOpen(false)}
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors outline-none",
+                      active 
+                        ? "bg-emerald-50 text-emerald-700" 
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                    )}
+                    title={!sidebarOpen ? label : undefined}
+                  >
+                    <Icon className={cn("w-4 h-4 flex-shrink-0", active ? "text-emerald-600" : "text-gray-500")} />
+                    {sidebarOpen && <span className="truncate">{label}</span>}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </nav>
         
         {/* Sidebar Footer */}
