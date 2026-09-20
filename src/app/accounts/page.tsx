@@ -10,6 +10,7 @@ import {
   ArrowDownLeft,
   History,
 } from "lucide-react";
+import { ExportButton } from "@/components/ui/export-button";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +54,18 @@ export default async function AccountsPage() {
 
   const totalLiquid = Object.values(balances).reduce((sum, b) => sum + b, 0);
 
+  const exportData = recent.map((t) => {
+    const isInflow = t.transactionType === "inflow";
+    const amt = decimalToNumber(t.amount);
+    return [
+      new Date(t.createdAt).toLocaleString(),
+      t.accountType,
+      isInflow ? "Inflow" : "Outflow",
+      t.description || "—",
+      (isInflow ? "+" : "-") + amt.toFixed(2),
+    ];
+  });
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -80,6 +93,12 @@ export default async function AccountsPage() {
               {formatCurrency(totalLiquid)}
             </span>
           </div>
+          <ExportButton 
+            title="Account Ledger Statement"
+            filename="accounts_ledger"
+            columns={["Date & Time", "Account Channel", "Type", "Transaction Description", "Amount (PKR)"]}
+            data={exportData}
+          />
         </div>
       </div>
 

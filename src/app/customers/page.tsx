@@ -8,6 +8,7 @@ import { EditCustomerModal } from "@/components/customers/edit-customer-modal";
 import { ReceivePaymentModal } from "@/components/customers/receive-payment-modal";
 import { formatCurrency, decimalToNumber } from "@/lib/utils";
 import { Users, Search, BookOpen, AlertCircle, ArrowUpRight } from "lucide-react";
+import { ExportButton } from "@/components/ui/export-button";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,13 @@ export default async function CustomersPage({
     }
   }
 
+  const exportData = customers.map(c => [
+    c.name,
+    c.phone || "No phone",
+    c.address || "—",
+    decimalToNumber(c.balance).toFixed(2)
+  ]);
+
   return (
     <div className="space-y-6">
       {/* Top Header */}
@@ -48,7 +56,15 @@ export default async function CustomersPage({
           </p>
         </div>
 
-        <CustomerModal />
+        <div className="flex items-center gap-3">
+          <ExportButton 
+            title="Customer Profiles & Balances"
+            filename="customers_list"
+            columns={["Customer Name", "Contact Details", "Address", "Khata Balance"]}
+            data={exportData}
+          />
+          <CustomerModal />
+        </div>
       </div>
 
       {/* KPI Cards */}

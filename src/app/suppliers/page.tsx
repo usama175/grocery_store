@@ -1,11 +1,20 @@
 import { Truck, Edit2, Trash2, Mail, Phone } from "lucide-react";
 import { getSuppliers } from "@/app/actions/suppliers";
 import { SupplierModal } from "@/components/suppliers/supplier-modal";
+import { ExportButton } from "@/components/ui/export-button";
+import type { Supplier } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 
 export default async function SuppliersPage() {
   const suppliers = await getSuppliers();
+
+  const exportData = suppliers.map((s: Supplier) => [
+    s.name,
+    s.contactPerson || "-",
+    `${s.phone || ""}${s.phone && s.email ? " / " : ""}${s.email || ""}` || "-",
+    s.isActive ? "Active" : "Inactive"
+  ]);
 
   return (
     <div className="space-y-6">
@@ -14,7 +23,15 @@ export default async function SuppliersPage() {
           <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">Suppliers</h1>
           <p className="text-sm text-gray-500 mt-1">Manage vendor details and contact information.</p>
         </div>
-        <SupplierModal />
+        <div className="flex items-center gap-3">
+          <ExportButton 
+            title="Suppliers List"
+            filename="suppliers_list"
+            columns={["Supplier Name", "Contact Person", "Contact Info", "Status"]}
+            data={exportData}
+          />
+          <SupplierModal />
+        </div>
       </div>
 
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
@@ -37,7 +54,7 @@ export default async function SuppliersPage() {
                   </td>
                 </tr>
               )}
-              {suppliers.map((s: any) => (
+              {suppliers.map((s: Supplier) => (
                 <tr key={s.id} className="hover:bg-gray-50/50 transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">

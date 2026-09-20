@@ -8,6 +8,7 @@ import {
   Search,
   ArrowUpDown
 } from "lucide-react";
+import { ExportButton } from "@/components/ui/export-button";
 
 export default async function InventoryPage({
   searchParams,
@@ -32,6 +33,20 @@ export default async function InventoryPage({
     return true;
   });
 
+  const exportData = displayedProducts.map((p) => {
+    const stock = decimalToNumber(p.currentStock);
+    const cost = decimalToNumber(p.purchaseRate);
+    const retail = decimalToNumber(p.saleRate);
+    return [
+      p.name,
+      p.category?.name || "Uncategorized",
+      p.barcode || "-",
+      cost.toFixed(2),
+      retail.toFixed(2),
+      `${stock} ${p.unit}`
+    ];
+  });
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -41,6 +56,12 @@ export default async function InventoryPage({
           <p className="text-sm text-gray-500 mt-1">Manage your products, pricing, and stock levels.</p>
         </div>
         <div className="flex items-center gap-3">
+           <ExportButton 
+             title="Inventory List"
+             filename="inventory_list"
+             columns={["Product Name", "Category", "SKU / Barcode", "Cost Price", "Selling Price", "In Stock"]}
+             data={exportData}
+           />
            <ProductModal categories={categories} />
         </div>
       </div>
